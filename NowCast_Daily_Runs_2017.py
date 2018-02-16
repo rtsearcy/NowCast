@@ -21,7 +21,7 @@ from sklearn.linear_model import LogisticRegression
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
-class Tee:
+class Tee: # for logging
     def __init__(self,*files):
         self.files = files
     def write(self, obj):
@@ -30,7 +30,7 @@ class Tee:
     def flush(self):
         pass
 
-def qd(x):
+def qd(x): # longshore current
     if x == 0:# or isnan(x):
         return 0
     elif isnan(x):
@@ -39,7 +39,7 @@ def qd(x):
         return -1
     else: return 1 # if sin < 0, - sin is > 0, current is +
 
-def grabWU(day,st,angle):
+def grabWU(day,st,angle): # grab met data from WU
     yest = day - datetime.timedelta(days=1)
     yesterday = yest.strftime('%Y%m%d')
     today = day.strftime('%Y%m%d')
@@ -120,7 +120,7 @@ def grabWU(day,st,angle):
     weather_vars.update(rainH)
     return weather_vars #dictionaryF
 
-def getFlow(beach, day):
+def getFlow(beach, day): # grab flow data from USGS
     # Select USGS Station
     if beach == 'Cowell':
         site_no = '11161000' #SAN LORENZO
@@ -182,7 +182,7 @@ def getFlow(beach, day):
 
     return flow_var
 
-def getWaves(beach, day, samt):
+def getWaves(beach, day, samt): # grab wave data from CDIP
     # Select CDIP buoy
     if beach == 'Cowell':  # SANTA CRUZ
         st = '157' #PT SUR
@@ -239,19 +239,6 @@ def getWaves(beach, day, samt):
     except Exception as exc:
         print('There was a problem getting wave data with the available URL: %s' % exc)
         return 0
-
-    # data = []
-    # D = web.text.splitlines()
-    # for line in D: ## TODO find better way to grab all data
-    #     row = line.split()
-    #     if len(row) == 10:
-    #         data.append(row)
-    # df = pd.DataFrame(data)
-    # df.columns = ['year','month','day','hour','minute', 'WVHT', 'DPD', 'MWD', 'APD', 'Wtemp_B']
-    # df['dt'] = pd.to_datetime(df[['year', 'month', 'day', 'hour', 'minute']])
-    # df.set_index('dt',inplace= True)
-    # df = df.astype(float)
-    # df = df[['WVHT', 'DPD', 'MWD', 'APD', 'Wtemp_B']]
 
     data = []
     D = web.text.splitlines()
@@ -316,7 +303,7 @@ def getWaves(beach, day, samt):
     wave = dict(wave)
     return wave
 
-def getTides(beach, day, samt, base_folder):
+def getTides(beach, day, samt, base_folder): # get tide data from pre-downloaded tidal predictions from NOAA
     # Select tide station
     if beach == 'Cowell':  # SANTA CRUZ
         st = 'Monterey'
@@ -407,7 +394,7 @@ def getTides(beach, day, samt, base_folder):
     tide_vars.update(hourly_vars)
     return tide_vars
 
-def getWeather(beach, day, base_folder):
+def getWeather(beach, day, base_folder): # grab WU and stored weather data
     # Select weather station
     if beach == 'Cowell':  # SANTA CRUZ
         st = 'Watsonville'
@@ -460,81 +447,6 @@ def getWeather(beach, day, base_folder):
     weather_file = base_folder + 'weather\\' +  beach.replace(' ','_') + '_weather.csv'
 
     weather_vars = grabWU(day, st, angle) #Get today's variables (rain1, temp1, wspd1, etc.)
-    # yest = day - datetime.timedelta(days=1)
-    # yesterday = yest.strftime('%Y%m%d')
-    # today = day.strftime('%Y%m%d')
-    #
-    # url_y = 'http://api.wunderground.com/api/f1add9b67c9878df/history_' + yesterday + '/q/CA/%s.json' % (st)
-    # url_t = 'http://api.wunderground.com/api/f1add9b67c9878df/history_' + today + '/q/CA/%s.json' % (st)
-    #
-    # web_y = requests.get(url_y)  # yesterday's weather data
-    # try:
-    #     web_y.raise_for_status()
-    # except Exception as exc:
-    #     print('There was a problem: %s' % exc)
-    #
-    # ## Yesterday's parameters
-    # weatherData_y = json.loads(web_y.text)
-    # sum_y = weatherData_y['history']['dailysummary']
-    #
-    # yw = {'temp1': float(sum_y[0]['meantempi']),
-    #       'dtemp1': float(sum_y[0]['meandewpti']),
-    #       'wspd1': float(sum_y[0]['meanwindspdi']),
-    #       'wdir1': float(sum_y[0]['meanwdird']),
-    #       'pres1': float(sum_y[0]['meanpressurei'])} # No cloud cover
-    # wspd = yw['wspd1']
-    # wdir = yw['wdir1']
-    # yw.update({'awind1': wspd * sin(((wdir - angle) / 180) * pi),
-    #            'owind1': wspd * cos(((wdir - angle) / 180) * pi)})
-    #
-    # precip_y_total = sum_y[0]['precipi']
-    # if precip_y_total == 'T':
-    #     precip_y_total = 0.0
-    # else:
-    #     precip_y_total = float(precip_y_total)
-    # yw.update({'rain1': precip_y_total})
-    #
-    # if yw['rain1'] > 0.0:
-    #     yw.update({'lograin1': log10(yw['rain1'])})
-    # else:
-    #     yw.update({'lograin1': log10(0.005)})
-    #
-    # weather_vars = yw
-    #
-    # ## rainH
-    # web_t = requests.get(url_t)  # today's weather data
-    # try:
-    #     web_t.raise_for_status()
-    # except Exception as exc:
-    #     print('There was a problem: %s' % exc)
-    #
-    # weatherData_t = json.loads(web_t.text)
-    # sum_t = weatherData_t['history']['dailysummary']
-    # precip_t_total = sum_t[0]['precipi']
-    #
-    # if precip_t_total == 'T':  # If rainfall today is listed as trace
-    #     first_8_hr = 0.0
-    # elif float(precip_t_total) > 0:
-    #     O = weatherData_t['history']['observations']
-    #     first_8_hr = 0.0
-    #     for i in range(0, len(O)):
-    #         if float(O[i]['date']['hour']) > 7:
-    #             break
-    #         #if O[i]['date']['hour'] == O[i + 1]['date']['hour']:
-    #         if 'METAR' not in O[i]['metar']:
-    #             continue
-    #         else:
-    #             if O[i]['precipi'] != '-9999.0' and O[i]['precipi'] != '-9999.00' and O[i]['precipi'] != 'T':
-    #                 first_8_hr += float(O[i]['precipi'])
-    # else:
-    #     first_8_hr = 0.0
-    #
-    # if first_8_hr > 0.0:
-    #     rainH = {'rainH_b': 1, 'lograinH': log10(first_8_hr)}
-    # else:
-    #     rainH = {'rainH_b': 0, 'lograinH': log10(0.005)}
-    #
-    # weather_vars.update(rainH)
 
     # Rain variables - pull from existing spreadsheet #
     df_weather = pd.read_csv(weather_file)
@@ -607,7 +519,7 @@ def getWeather(beach, day, base_folder):
     df_weather.to_csv(weather_file)
     return weather_vars
 
-def getLocal(beach,day):
+def getLocal(beach,day): # grab local parameters from NOAA CO-OPS
     ##Only Previous Day Means and Maxes##
     # Select station
     if beach == 'Santa Monica Pier':  # SANTA MONICA
@@ -676,16 +588,11 @@ def getLocal(beach,day):
                 local_vars.update({var_name + '1': df.mean().round(1)})  # Previous day mean
                 local_vars.update({var_name + '1_max': df.max().round(1)})  # Previous day max
 
-            # else:
-            #     df = df[['t', 's', 'd']]
-            #     df.columns = ['date', 'wspd', 'wdir']
-            #     df['date'] = pd.to_datetime(df['date'])
-            #     df = df.set_index('date')
         else:
             print('No local ' + p + ' data found for ' + beach)
     return local_vars
 
-def getFIB(beach,day, base_folder):
+def getFIB(beach,day, base_folder): # grab FIB data from stored files
     if beach == 'Santa Monica Pier':
         sample_delay = 2
 
@@ -698,17 +605,11 @@ def getFIB(beach,day, base_folder):
     fib_vars = {}
 
     # Last sample (FIB1) #
-    #last_sample_date = df.index[-1].strftime('%m/%d/%Y')
     print(' FIB variables:')
     if df.index[-1] < pd.to_datetime(day) - pd.to_timedelta(str(sample_delay) + ' days'):
         print('   Most recent sample from more than ' + str(sample_delay) + ' days ago. Update sample file with new samples, and rerun NowCast:')
     else:
         print('   Last Samples:')
-
-    #last_fib = df.iloc[-1].values
-    # print('   TC - ' + str(last_fib[0]))
-    # print('   FC - ' + str(last_fib[1]))
-    # print('   ENT - ' + str(last_fib[2]))
 
     # Variables #
     #today_in = day.strftime('%Y-%m-%d')
@@ -741,7 +642,7 @@ def getFIB(beach,day, base_folder):
 
     return fib_vars
 
-def upload_BRC(upload_csv):
+def upload_BRC(upload_csv): # upload predictions to BRC website/app
 
     htb_logon = 'healthebay'
     htb_pwd = 'htbbrcv2'
@@ -770,8 +671,7 @@ def upload_BRC(upload_csv):
     driver.close()
 
 date = datetime.date.today() #- datetime.timedelta(days= 1)
-#base_folder = 'Z:\Predictive Modeling\Phase III\Modeling\Summer_2017\Daily Runs\\'
-base_folder = 'S:\SCIENCE & POLICY - work in progress\Beach Report Card\Predictive Modeling\Daily files\\2017\\'
+base_folder = ### INSERT BASE FOLDER HERE ###
 
 beaches = {'Cowell': {'Flow': 1,'Waves': 1,'Tides': 1,'Weather': 1,'Local':0,'FIB':0, 'sam_time': '09:35','Pilot':0,'BRC': 435}, #435
            'Main (Boardwalk)': {'Flow': 0,'Waves': 1,'Tides': 1,'Weather': 1,'Local':0,'FIB':0, 'sam_time': '09:13','Pilot':1,'BRC': 0},  #436
@@ -795,7 +695,7 @@ df_pilot = pd.DataFrame()
 df_pred_all = pd.DataFrame()
 df_site = pd.DataFrame()
 
-old_stdout = sys.stdout
+old_stdout = sys.stdout # for logging
 old_stderr = sys.stderr
 log_file = open(base_folder +'logs\\run_log_' + date_str_file + '.log','w')
 sys.stdout = Tee(sys.stdout, log_file)
@@ -803,7 +703,7 @@ sys.stderr = Tee(sys.stderr, log_file)
 
 count = 0
 for i in beach_list:
-    if count % 5 == 0 and count>0:
+    if count % 5 == 0 and count>0: # WU 60s delay for API calls
         print('Five beaches modeled. Waiting 60 seconds...\n')
         time.sleep(60)
     #try:
@@ -1064,9 +964,6 @@ for i in beach_list:
     df_pred = pd.DataFrame(pred_dict, index= [date_str])
     df_pred.index.rename('Date',inplace=True)
     df_pred.to_csv(base_folder + '\\' + i + '\\predictions\\' + date_str_file + '_' + i + '_predictions.csv')
-    # except:
-    #     print('Could not run models for ' + i + '. Please run manually')
-    #time.sleep(1)
     print('\n')
     count += 1
 
