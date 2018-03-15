@@ -14,8 +14,8 @@ season = 'Summer' # Summer, Winter, All
 
 # Load Locations CSV
 df_loc = pd.read_csv(loc_file, encoding= 'latin1')
-brc_id = list(df_loc['id'].dropna())
-df_loc.set_index('id', inplace=True)
+brc_id = list(df_loc['brc_id'].dropna())
+df_loc.set_index('brc_id', inplace=True)
 
 # Open BRC Database
 conn_str = (
