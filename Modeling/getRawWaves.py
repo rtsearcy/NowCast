@@ -14,10 +14,10 @@ import os
 import pandas as pd
 
 # Inputs #
-outfolder_vars = 'Z:\Predictive Modeling\Phase III\Modeling\Summer_2018\Environmental Variables\Waves'
+outfolder_vars = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Waves'
 outfolder_raw = outfolder_vars + '\\raw'
-sd = '20080101'  # Must be YYYYMMDD format
-ed = '20171101'  # Because UTC time, include extra day
+sd = '20021231'  # start date, Must be YYYYMMDD format
+ed = '20180331'  # end date, Because UTC time, include extra day
 
 stations = {
     'Point Loma South':	'191',
@@ -31,42 +31,52 @@ stations = {
     'Point Sur': '157',
     'Cabrillo Point Nearshore':	'158',
     'Monterey Bay West': '185',
+    'San Francisco Bar': '142',
+    'Point Reyes': '029',
     'Cape Mendocino': '094',
     'Humboldt Bay North Split':	'168'
 }
 
 # Find Raw CDIP Data #
 print('CDIP Wave Data\nRaw Directory: ' + outfolder_raw + '\nVariable Directory: ' + outfolder_vars)
+df_missing = pd.DataFrame()
 for key in stations:
     st_name = key
     st = stations[key]
-
-    # Grab data from CDIP website #
-    print('\nGrabbing CDIP wave data from ' + st_name + ' station (' + st + ')')
-    url = 'http://cdip.ucsd.edu/data_access/ndar?' + st + '+pm+' + sd + '-' + ed  # date range using CDIP NDAR, grab wave parameters, no header
-    web = requests.get(url)
-    try:
-        web.raise_for_status()
-    except Exception as exc:
-        print('  There was a problem grabbing wave data for Station ' + st + ': %s' % exc)
-
-    # Create DataFrame, index with timestamp, convert blanks/errors to NaN #
-    data = [line.split() for line in web.text.splitlines()]
-    data = data[:-1]  # exclude footer
-    data[0][0] = data[0][0].replace('<pre>', '')  # remove header
-    df_raw = pd.DataFrame(data)
-    df_raw.columns = ['year', 'month', 'day', 'hour', 'minute', 'WVHT', 'DPD', 'MWD', 'APD', 'Wtemp_B']
-    df_raw['dt'] = pd.to_datetime(df_raw[['year', 'month', 'day', 'hour', 'minute']])
-    df_raw.set_index('dt', inplace=True)
-    df_raw.index = df_raw.index.shift(-8, freq='h')  # convert from UTC to PST (- 8 hrs)
-    df_raw = df_raw[['WVHT', 'DPD', 'MWD', 'APD', 'Wtemp_B']]
-    df_raw = df_raw.apply(lambda x: pd.to_numeric(x, errors='coerce'))
-
-    # Save to raw outfile #
     outname_raw = st_name.replace(' ', '_') + '_raw_wave_data_' + sd + '_' + ed + '.csv'
     out_file_raw = os.path.join(outfolder_raw, outname_raw)
-    df_raw.to_csv(out_file_raw)
-    print('  Raw wave data saved to ' + outname_raw)
+
+    if outname_raw not in os.listdir(outfolder_raw):
+        # Grab data from CDIP website #
+        print('\nGrabbing CDIP wave data from ' + st_name + ' station (' + st + ')')
+        url = 'http://cdip.ucsd.edu/data_access/ndar?' + st + '+pm+' + sd + '-' + ed
+        # date range using CDIP NDAR, grab wave parameters, no header
+        web = requests.get(url)
+        try:
+            web.raise_for_status()
+        except Exception as exc:
+            print('  There was a problem grabbing wave data for Station ' + st + ': %s' % exc)
+
+        # Create DataFrame, index with timestamp, convert blanks/errors to NaN #
+        data = [line.split() for line in web.text.splitlines()]
+        data = data[:-1]  # exclude footer
+        data[0][0] = data[0][0].replace('<pre>', '')  # remove header
+        df_raw = pd.DataFrame(data)
+        df_raw.columns = ['year', 'month', 'day', 'hour', 'minute', 'WVHT', 'DPD', 'MWD', 'APD', 'Wtemp_B']
+        df_raw['dt'] = pd.to_datetime(df_raw[['year', 'month', 'day', 'hour', 'minute']])
+        df_raw.set_index('dt', inplace=True)
+        df_raw.index = df_raw.index.shift(-8, freq='h')  # convert from UTC to PST (- 8 hrs)
+        df_raw = df_raw[['WVHT', 'DPD', 'MWD', 'APD', 'Wtemp_B']]
+        df_raw = df_raw.apply(lambda x: pd.to_numeric(x, errors='coerce'))
+
+        # Save to raw outfile #
+        df_raw.to_csv(out_file_raw)
+        print('  Raw wave data saved to ' + outname_raw)
+    else:
+        print('\nGrabbing CDIP wave data for ' + st_name + ' from ' + outname_raw)
+        df_raw = pd.read_csv(out_file_raw)
+        df_raw['dt'] = pd.to_datetime(df_raw['dt'])
+        df_raw.set_index('dt', inplace=True)
 
     # Create DF for daily variables
     wave_round = {'WVHT': 2, 'DPD': 2, 'MWD': 0, 'APD': 2, 'Wtemp_B': 1}  # sig figs on CDIP
@@ -77,8 +87,17 @@ for key in stations:
         df_vars[c + '1_max'] = df_raw[c].resample('D').max().shift(1, freq='D')  # previous day max
         df_vars[c + '1_min'] = df_raw[c].resample('D').min().shift(1, freq='D')  # previous day min
 
+    df_vars = df_vars.fillna(method='ffill', limit=3)  # forward fill variables up to 3 days
+    df_miss_temp = df_vars.isnull().sum().rename(st_name)
+    df_miss_temp.loc['start'] = str(df_vars.first_valid_index())
+    df_miss_temp.loc['end'] = str(df_vars.last_valid_index())
+    df_missing = df_missing.append(df_miss_temp)
+
     # Save to variable outfile #
     outname_vars = st_name.replace(' ', '_') + '_Wave_Variables_' + sd + '_' + ed + '.csv'
     out_file_vars = os.path.join(outfolder_vars, outname_vars)
     df_vars.to_csv(out_file_vars)
     print('  Daily wave variables saved to ' + outname_vars)
+
+# Save missing stats df
+df_missing.to_csv(os.path.join(outfolder_vars, 'missing_days_' + sd + '_' + ed + '.csv'))

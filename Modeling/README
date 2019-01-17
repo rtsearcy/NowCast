@@ -1,1 +1,3 @@
 - Modeling Files -
+
+Python scripts used to collect environmental and bacteria data, aggregate them into a single dataset, and create NowCast models
