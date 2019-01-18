@@ -1,3 +1,5 @@
 - Modeling Files -
 
 Python scripts used to collect environmental and bacteria data, aggregate them into a single dataset, and create NowCast models
+
+Modeling for all beaches in the NowCast system is conducted prior to beginning of the swim season. It is also conducted if remodeling is needed due to performance issues during the season itself.

@@ -43,7 +43,7 @@ def grabWU(day,st,angle): # grab met data from WU
     yest = day - datetime.timedelta(days=1)
     yesterday = yest.strftime('%Y%m%d')
     today = day.strftime('%Y%m%d')
-    wu_api = '6690f707e17d553e' #'a759884d51a36363'
+    wu_api = 'XXXX' # Redacted
 
     url_y = 'http://api.wunderground.com/api/' + wu_api + '/history_' + yesterday + '/q/CA/%s.json' % (st)
     url_t = 'http://api.wunderground.com/api/' + wu_api + '/history_' + today + '/q/CA/%s.json' % (st)
@@ -644,8 +644,8 @@ def getFIB(beach,day, base_folder): # grab FIB data from stored files
 
 def upload_BRC(upload_csv): # upload predictions to BRC website/app
 
-    htb_logon = 'healthebay'
-    htb_pwd = 'htbbrcv2'
+    htb_logon = 'XXX'
+    htb_pwd = 'XXXX'  # redacted
     upload_file = upload_csv
 
     # Open Chrome #
@@ -671,7 +671,7 @@ def upload_BRC(upload_csv): # upload predictions to BRC website/app
     driver.close()
 
 date = datetime.date.today() #- datetime.timedelta(days= 1)
-base_folder = ### INSERT BASE FOLDER HERE ###
+base_folder = '### INSERT BASE FOLDER HERE ###'
 
 beaches = {'Cowell': {'Flow': 1,'Waves': 1,'Tides': 1,'Weather': 1,'Local':0,'FIB':0, 'sam_time': '09:35','Pilot':0,'BRC': 435}, #435
            'Main (Boardwalk)': {'Flow': 0,'Waves': 1,'Tides': 1,'Weather': 1,'Local':0,'FIB':0, 'sam_time': '09:13','Pilot':1,'BRC': 0},  #436

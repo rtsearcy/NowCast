@@ -19,7 +19,7 @@ start_date = '2002-12-31'  # in YYYY-MM-DD format, build in previous day
 end_date = '2018-03-31'
 
 
-api_key = '6216de17-d2ad-4f0f-b3d5-65ec3638c7c4'
+api_key = 'XXXX'  # Redacted
 units = 'M'  # 'E' English, 'M' Metric
 
 stations = {
