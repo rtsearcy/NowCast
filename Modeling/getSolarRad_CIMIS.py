@@ -5,6 +5,9 @@
 # Grabs bulk solar radiation data [W/m^2] from CIMIS stations around CA, stores in csv.
 # http://www.cimis.water.ca.gov/
 
+# Note: CIMIS API often times out calls quickly at certain times of day,
+# so this code may need to be rerun for specific stations
+
 import requests
 import json
 import pandas as pd
@@ -13,18 +16,17 @@ import time
 import os
 
 # Inputs #
-out_folder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Solar Radiation'
+out_folder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\Solar Radiation'
 
 start_date = '2002-12-31'  # in YYYY-MM-DD format, build in previous day
-end_date = '2018-03-31'
+end_date = '2018-10-31'
 
-
-api_key = 'XXXX'  # Redacted
+api_key = '6216de17-d2ad-4f0f-b3d5-65ec3638c7c4'
 units = 'M'  # 'E' English, 'M' Metric
 
 stations = {
     'Santa Rosa': 83,  # ~10 miles from beach
-    # 'Pescadero': 253, # Active only since 2017
+    #'Pescadero': 253, # Active only since 2017
     'Santa Cruz': 104,  # De Lavega station
     'Watsonville West': 209,
     'Castroville': 19,
@@ -37,7 +39,7 @@ stations = {
     'Santa Monica': 99,
     'Long Beach': 174,
     'Irvine': 75,
-    # 'San Clemente':, 241, Active only since 2016
+    #'San Clemente':, 241, Active only since 2016
     'Torrey Pines': 173
 }
 

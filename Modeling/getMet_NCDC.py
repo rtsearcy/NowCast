@@ -12,7 +12,7 @@ import requests
 import os
 
 # Inputs
-outfolder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Meteorological\\'
+outfolder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\Meteorological\\'
 outfolder_raw = outfolder + 'raw\\'
 outfolder_daily = outfolder + 'daily\\'
 # outfolder_daily = 'S:\SCIENCE & POLICY - work in progress\Beach Report Card\Predictive Modeling\Daily files\\2018\qaqc\met\\raw'
@@ -20,14 +20,14 @@ outfolder_daily = outfolder + 'daily\\'
 airport_file = outfolder_raw + 'airports.csv'  # file with station metadata (see below for necessary columns)
 
 sd = '2002-12-01'  # start date, in YYYY-MM-DD format (account for previous day)
-ed = '2018-03-31'  # end date, account for 8hr UTC shift
+ed = '2018-10-31'  # end date, account for 8hr UTC shift
 
-rs = 1  # 0 - grab raw data from internet; 1 - grab raw data from flat files (saves time)
+rs = 0  # 0 - grab raw data from internet; 1 - grab raw data from flat files (saves time)
 
 # Import Airport Stations
 df_air = pd.read_csv(airport_file)
 df_air.set_index('NAME', inplace=True)
-air_list = list(df_air.index)  # or custom list on airport locations
+air_list = ['Half Moon Bay']#list(df_air.index)  # or custom list on airport locations
 
 print('Meterological Data\nVariable Directory: ' + outfolder + '\nRaw Directory: ' + outfolder_raw)
 for a in air_list:

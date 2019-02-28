@@ -28,12 +28,12 @@ def lt(df, thresh):  # Compute less than binary var.
 
 
 # Import raw data csv to pd DataFrame
-infolder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Tides\\raw'
-outfolder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Tides'
+infolder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\Tides\\raw'  # raw data
+outfolder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\Tides'  # variables stored here
 # outfolder = 'Z:\Predictive Modeling\Phase III\Modeling\Data\Tides\Variables\Daily'
 
 sd = '20021231'  # Start date (account for previous day, conservative)
-ed = '20180331'  # End date
+ed = '20181031'  # End date
 
 # TO PROCESS SINGLE FILE
 # (change indent)

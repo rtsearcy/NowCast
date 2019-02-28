@@ -11,7 +11,7 @@ from datetime import time
 
 
 def alongshore(x):  # Calculates longshore current direction based on wave parameters
-    if x == 0:  # or isnan(x):
+    if x == 0:   # or isnan(x):
         return 0
     elif isnan(x):
         return nan
@@ -67,14 +67,14 @@ def tide_vars_hourly(df, raw_folder, station, sample_time=time(10, 0)):
 
 
 # Inputs
-base_folder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\\'
+base_folder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\\'
 beach_base_folder = base_folder + 'Beaches\\'
 enviro_base_folder = base_folder + 'Environmental Variables\\'  # where enviro data is stored
 
 loc_file = os.path.join(base_folder, 'locations.csv')  # Beach metadata (name, angle, station info)
 range_file = os.path.join(enviro_base_folder, 'var_range.csv')
 
-spec_beaches = []  # Only combine vars for certain beaches
+spec_beaches = ['Fitzgerald Marine Reserve','Surfers Beach','Venice Beach Frenchmans Creek','Francis']  # Only combine vars for certain beaches
 percent_to_drop = 0.075  # Allowable percentage of missing values allowed before dropping variable entirely
 dry_only = 0  # 1 - Dry samples only in the dataset; 0 - Dry and wet samples.
 # Wet samples are those taken on days where at least 0.1 inch of rain occurred in previous 72 hours

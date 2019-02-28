@@ -12,13 +12,13 @@ import os
 
 # Inputs
 brc_db_file = 'N:\BEACH 2018-19\BRC2015.mdb'  # BRC Database
-base_folder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019'
+base_folder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019'
 fib_folder = os.path.join(base_folder, 'Raw Fib')  # Directory for output file
 loc_file = os.path.join(base_folder, 'locations.csv')
 # CSV of BRC Site IDs [id] and Site Names [beach] (Names can be customized)
-min_date = '2003-01-01'  # For Winter 2018/19, 15y of data
+min_date = '2003-01-01'  # For Summer '19, 15y of data
 max_date = '2018-10-31'
-season = 'Winter'  # Summer, Winter, All - for statistic sheet
+season = 'Summer'  # Summer, Winter, All - for statistic sheet
 
 # Load Locations CSV
 df_loc = pd.read_csv(loc_file, encoding='latin1')
@@ -106,5 +106,5 @@ for b in brc_id:
 df_out = df_out[['Name', 'County', 'N', 'Start Date', 'End Date', 'Years', 'Post Days', 'TC Exc', 'FC Exc',
                  'ENT Exc', '% TC Exc', '% FC Exc', '% ENT Exc', 'Driver']]
 df_out.index.rename('BRC_ID', inplace=True)
-df_out.to_csv(os.path.join(fib_folder, 'sites_summary' + season + '.csv'))
+df_out.to_csv(os.path.join(base_folder, 'sites_summary_' + season + '.csv'))
 print('yeah baby!')

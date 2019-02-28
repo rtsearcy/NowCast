@@ -1,4 +1,5 @@
 # flowVarsDaily.py - Grabs daily data from USGS and calculates previous day flow variables
+# Source: http://waterdata.usgs.gov/ca/nwis/current/?type=flow
 # RTS - March 2018 UPDATE
 
 import pandas as pd
@@ -8,27 +9,33 @@ import os
 
 # Inputs #
 sd = '2002-12-28'  # YYYY-MM-DD format, include one day previous
-ed = '2018-03-31'
-outfolder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Flow'
+ed = '2018-10-31'
+outfolder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\Flow'
 outfolder_raw = os.path.join(outfolder, 'raw')
 df_summary = pd.DataFrame()
 
 stations = {
-            'San Diego River': '11023000',  # Ocean Beach
-            'San Luis Rey River': '11042000',  # Oceanside
-            'San Juan Creek': '11046530',   # Doheny State
-            'Arroyo Trabuco Creek': '11047300',  # Doheny State
-            'Santa Ana River': '11078000',  # Huntington
+            'San Diego River': '11023000',  # SD (Ocean Beach, Mission Bay)
+            'San Luis Rey River': '11042000',  # SD - Oceanside
+            'San Juan Creek': '11046530',   # OC - Doheny State
+            'Arroyo Trabuco Creek': '11047300',  # OC - Doheny State
+            'Santa Ana River': '11078000',  # OC - Huntington, Newport, SA Rivermouth
+            'Rio Hondo': '11102300',  # LA River/Long Beach
+            'San Gabriel River': '11087020',  # Seal Beach/LB
             'Ventura River': '11118500',  # Emmawood/Ventura Point
-            'Mission Creek': '11119745',  # East Beach
+            'Carpinteria Creek': '11119500',  # Carp. State Beach
+            'Mission Creek Upper': '11119745',  # East Beach
+            'Mission Creek Lower': '11119750',  # East Beach
             'Atascadero Creek': '11120000',  # Goleta
             'Santa Ynez River': '11134000',  # Jalama
-            'Carmel River': '11143250',
+            'Carmel River': '11143250',  # Not near Carmel City Beach
             'Salinas River': '11152500',  # Monterey/Marina
             'San Lorenzo River': '11161000',  # Cowell, Santa Cruz beaches
             'Soquel Creek': '11160000',  # Cowell, Santa Cruz beaches
             'Pescadero Creek': '11162500',  # Pescadero
-            'Pilarcitos Creek': '11162630'  # Half moon bay
+            'Pilarcitos Creek': '11162630',  # Half moon bay
+            'Redwood Creek': '11460151',  # Muir Beach (Marin)
+            'Little River': '11481200'  # HB (Moonstone)
 }
 
 print('Flow Data\nDirectory: ' + outfolder)
@@ -84,7 +91,6 @@ for key in stations:
         'Missing Days': missing
     }
     df_summary = df_summary.append(pd.DataFrame(sum_dict, index=[station_name]))
-    print('test')
 
 df_summary = df_summary[['ID', 'Start Date', 'End Date', 'Missing Days']]
 df_summary.index.rename('Station', inplace=True)

@@ -15,11 +15,11 @@ import re
 import os
 
 # Inputs
-outfolder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\\NOAA CO-OPS'
+outfolder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\\NOAA CO-OPS'
 infolder = os.path.join(outfolder, 'raw')
 
 sd = '20021231'  # Start date (account for previous day, conservative)
-ed = '20180331'  # End date
+ed = '20181031'  # End date
 
 # TO PROCESS SINGLE FILE
 # (change indent)

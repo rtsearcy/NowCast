@@ -67,7 +67,7 @@ loc_file = os.path.join(beaches_folder, 'nowcast_beaches_winter_2018_2019.csv')
 df_loc = pd.read_csv(loc_file)
 df_loc.set_index('beach', inplace=True)
 beach_list = list(df_loc[df_loc['pilot'] == 0].index)  # non-pilot
-# beach_list = list(df_loc.index)  # [all beaches] # or list of specific beaches
+#beach_list = list(df_loc.index)  # [all beaches] # or list of specific beaches
 
 np.seterr(divide='ignore')  # Stop Divide By Zero warnings for 0 exceedance models
 warnings.filterwarnings('ignore')

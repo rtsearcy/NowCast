@@ -1,6 +1,8 @@
 # beach_model.py - Create NowCast models using beach-specific variable datasets
 # RTS - 3/26/2018
 
+# TODO - max variables, reorder performance spreadsheet, parameters in one place in inputs,
+
 # For each FIB:
 # - remove other FIB type data
 # - identify technical feasibility of creating a model (more than X exceedances)
@@ -20,6 +22,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import confusion_matrix, roc_curve, r2_score
 from sklearn.externals import joblib
+from datetime import datetime
 
 
 class Tee:
@@ -34,7 +37,7 @@ class Tee:
         pass
 
 
-def check_corr(x, f, thresh=0.75):
+def check_corr(x, f, thresh=0.7):
     # Check if variables have correlations > thresh, and drop the one with least correlation to logFIB
     print('Checking variable correlations: ')
     c = x.corr()  # Pearson correlation coefs.
@@ -60,7 +63,7 @@ def check_corr(x, f, thresh=0.75):
     return x
 
 
-def multicollinearity_check(X, thr=5):  # Check VIF of model variables, drop if any above 'thr'
+def multicollinearity_check(X, thr=2.5):  # Check VIF of model variables, drop if any above 'thr'
     variables = list(X.columns)
     print('Checking multicollinearity of ' + str(len(variables)) + ' variables for VIF:')
     if len(variables) > 1:
@@ -270,24 +273,27 @@ def tune_mlr(X_train_sfs, y_train, perf_criteria, cm_perf, mlr, thresh, ease=0):
 
 # Inputs
 # - Alter these inputs at the beginning of each season or if passing models cannot be created
-base_folder = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\\'
+base_folder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\\'
 beach_base_folder = base_folder + 'Beaches\\'
 
-loc_file = os.path.join(base_folder, 'locations_all_weather.csv')  # Beach metadata (name, angle, station info)
-spec_beaches = []  # Fill if only to model certain beaches
+loc_file = os.path.join(base_folder, 'locations.csv')  # Beach metadata (name, angle, station info)
+spec_beaches = ['Francis']  # Fill if only to model certain beaches
 
 fib = ['FC', 'ENT']  # Change if only trying to model a single FIB type or two
 fib_thresh = {'TC': 10000, 'FC': 400, 'ENT': 104}  # As of 2019, not modeling TC anymore
+
 rs = 0  # random seed for data splitting
 
 # Exclude prev. FIB vars, add any other variables to exclude from modeling
 default_no_model = ['sample_time', 'TC', 'FC', 'ENT', 'TC1', 'FC1', 'ENT1', 'TC_exc', 'FC_exc', 'ENT_exc', 'TC1_exc',
                     'FC1_exc', 'ENT1_exc', 'wet']
 # Variables that are automatically excluded [don't make sense to model]
-no_model = default_no_model + ['logTC1', 'logFC1', 'logENT1'] + []  # Additional variables to drop
+vars_to_drop = ['logTC1', 'logFC1', 'logENT1'] + ['lograin3', 'lograin4', 'lograin5', 'lograin6', 'lograin7',
+                                                  'wdir_L1_max', 'wdir_L1_min']  # Additional variables to drop
+no_model = default_no_model + vars_to_drop
 
 split_methods = ['C1', 'C2', 'C3', 'C4', 'JK7525', 'JK7030', 'JK6040']  # C - chronological, JK - jackknife
-s = 'winter'  # Season (for splitting) - 'summer' or 'winter'
+s = 'summer'  # Season (for splitting) - 'summer' or 'winter'
 tf = 3  # technical feasibility exceedance limit
 
 model_types = ['blr', 'mlr']  # Binary logistic regression, multiple linear regression
@@ -301,20 +307,20 @@ perf_criteria = {  # Model Performance criteria
 # Beaches - FIB where alternative performance criteria is acceptable (spec = CM spec)
 # - List beach as key, and list of FIB as values
 alt_spec_perf = {
-    'Santa Monica Pier': 'FC',
-    'Cowell': ['FC', 'ENT'],
-    'Avalon 50ft W Pier':  ['FC', 'ENT'],
-    'Cabrillo Harborside Bathrooms': 'ENT',
-    'Clam Beach Strawberry Creek': 'ENT',
-    'Malibu Surfrider Breach': ['TC', 'FC', 'ENT'],
-    'Poche Beach': 'ENT',
-    'Baker Beach Lobos': 'ENT',
-    'Doheny': 'ENT'
+    # 'Santa Monica Pier': 'FC',
+    # 'Cowell': ['FC', 'ENT'],
+    # 'Avalon 50ft W Pier':  ['FC', 'ENT'],
+    # 'Cabrillo Harborside Bathrooms': 'ENT',
+    'Clam Beach': 'ENT',
+    # 'Malibu Surfrider Breach': ['TC', 'FC', 'ENT'],
+    # 'Poche Beach': 'ENT',
+    # 'Baker Beach Lobos': 'ENT',
+    # 'Doheny': 'ENT'
 }
 
 old_stdout = sys.stdout  # for logging
 old_stderr = sys.stderr
-debug = 1
+debug = 0
 
 # Get Beach Metadata
 df_loc = pd.read_csv(loc_file)
@@ -330,7 +336,8 @@ for b in beach_list:  # Create models for each beach
     var_folder = beach_folder + 'variables\\'
     model_folder = beach_folder + 'models\\'
     if debug == 0:
-        log_file = open(model_folder + b.replace(' ', '_') + '_modeling_logfile.log', 'w')
+        now_time = datetime.now().strftime("%m%d_%H%M")
+        log_file = open(model_folder + b.replace(' ', '_') + '_modeling_logfile_' + now_time + '.log', 'w')
         sys.stdout = Tee(sys.stdout, log_file)
         sys.stderr = Tee(sys.stderr, log_file)
     print('\n\n- - - | Modeling ' + b + ' | - - -')
@@ -348,6 +355,7 @@ for b in beach_list:  # Create models for each beach
     for f in fib:
         print('  ' + f + ' Exceedances: ' + str(df_vars[f + '_exc'].sum()))
     print('Number of Variables: ' + str(len(to_model)))
+    print('\nParameters:\nRandom Seed: ' + str(rs) + '\nDefault dropped Variables: ' + str(vars_to_drop))
 
     # Create current method df (used to reindex later); Remove non-model vars
     df_cm = df_vars[default_no_model]  # includes FIB_exc and FIB1_exc for CM eval
@@ -399,8 +407,8 @@ for b in beach_list:  # Create models for each beach
             cm_test = df_cm.reindex(y_test.index)
             train_exc = cm_train[f + '_exc'].sum()
             test_exc = cm_test[f + '_exc'].sum()
-            print('Training dataset:\n' + '  Samples - ' + str(len(cm_train)) + '\n  Exc. - ' + str(train_exc))
-            print('Test dataset:\n' + '  Samples - ' + str(len(cm_test)) + '\n  Exc. - ' + str(test_exc))
+            print('Training (calibration) dataset:\n' + '  Samples - ' + str(len(cm_train)) + '\n  Exc. - ' + str(train_exc))
+            print('Test (validation) dataset:\n' + '  Samples - ' + str(len(cm_test)) + '\n  Exc. - ' + str(test_exc))
 
             model_subfolder = model_folder + '\\' + f + '_' + m
             if (train_exc < 2) | (test_exc == 0):  # If insufficient exceedances in cal/val sets, use new split method

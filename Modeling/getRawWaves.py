@@ -14,12 +14,13 @@ import os
 import pandas as pd
 
 # Inputs #
-outfolder_vars = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\Waves'
+outfolder_vars = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\Waves'
 outfolder_raw = outfolder_vars + '\\raw'
 sd = '20021231'  # start date, Must be YYYYMMDD format
-ed = '20180331'  # end date, Because UTC time, include extra day
+ed = '20181031'  # end date, Because UTC time, include extra day
 
 stations = {
+    # 'Imperial Beach Nearshore': '155', Lots of missing data
     'Point Loma South':	'191',
     'Torrey Pines Outer': '100',
     'Oceanside Offshore': '045',
@@ -34,7 +35,7 @@ stations = {
     'San Francisco Bar': '142',
     'Point Reyes': '029',
     'Cape Mendocino': '094',
-    'Humboldt Bay North Split':	'168'
+    'Humboldt Bay North Spit':	'168'
 }
 
 # Find Raw CDIP Data #

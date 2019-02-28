@@ -2,7 +2,7 @@
 # RS - 1/17/2017
 # RTS - March 2018 UPDATE
 
-# Note: Calls are only allowed for 30d of data at a time (slows things down a bit). Code can take up to an hour to run
+# Note: Calls are only allowed for 30d of data at a time (slows things down a bit). Code can take up to two hours to run
 # for all stations, depending on the length of time desired
 
 import requests
@@ -13,10 +13,10 @@ from dateutil.parser import parse
 import pandas as pd
 
 # Inputs
-path = 'Z:\Predictive Modeling\Phase III\Modeling\Winter_2018_2019\Environmental Variables\\NOAA CO-OPS\\raw'
+path = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\Environmental Variables\\NOAA CO-OPS\\raw'
 
 begin_date_s = '20021231'
-end_date_s = '20180331'
+end_date_s = '20181031'
 
 units = 'metric'  # Temp = C, Speed = m/s, Pressure = mbar
 time_zone = 'lst'  # Local Standard Time (ignore DLS)
@@ -34,7 +34,7 @@ stations_dict = {
     'Monterey': '9413450',
     'San Francisco': '9414290',
     'Point Reyes': '9415020',
-    'Green Cove': '9416409',  # Sonoma
+    # 'Green Cove': '9416409',  # Sonoma - No data
     'North Split': '9418767',  # Humboldt
     'Crescent City': '9419750'  # Del Norte
 }
