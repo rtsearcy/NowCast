@@ -37,7 +37,7 @@ class Tee:
         pass
 
 
-def check_corr(x, f, thresh=0.7):
+def check_corr(x, f, thresh):
     # Check if variables have correlations > thresh, and drop the one with least correlation to logFIB
     print('Checking variable correlations: ')
     c = x.corr()  # Pearson correlation coefs.
@@ -63,7 +63,7 @@ def check_corr(x, f, thresh=0.7):
     return x
 
 
-def multicollinearity_check(X, thr=2.5):  # Check VIF of model variables, drop if any above 'thr'
+def multicollinearity_check(X, thr):  # Check VIF of model variables, drop if any above 'thr'
     variables = list(X.columns)
     print('Checking multicollinearity of ' + str(len(variables)) + ' variables for VIF:')
     if len(variables) > 1:
@@ -141,17 +141,19 @@ def data_splitter(df, method, seed, f, dir, season):  # Partitions data into cal
     return X_train, X_test, y_train, y_test
 
 
-def model_fit(X, y, model_type, seed, thresh, c=.001, cv=3):  # Fits model (model_type - MLR or BLR) to calibration data
+def model_fit(X, y, model_type, seed, thresh, c, cv):  # Fits model (model_type - MLR or BLR) to calibration data
     # X - calibration independent data; y - calibration dependant variable;
     # c - model regularization coefficient (smaller - more regularization of variables);\
     # cv - number of cross-validation steps
     if model_type == 'blr':
         y = (y > np.log10(thresh)).astype(int)
         lm = LogisticRegression(random_state=seed, C=c)
-        scorer = 'roc_auc'  # 'accuracy'
+        scorer = 'roc_auc'
+        #scorer = 'accuracy'
     elif model_type == 'mlr':
         lm = LinearRegression()
-        scorer = 'neg_mean_squared_error'  # 'r2'
+        scorer = 'neg_mean_squared_error'
+        #scorer = 'r2'
 
     S = RFECV(lm, cv=cv, scoring=scorer, n_jobs=1).fit(np.array(X), np.array(y))
     # Recursive Feature Elimination - Stepwise variable selection
@@ -183,7 +185,7 @@ def model_eval(true, predicted, thresh=0.5, tune=0):  # Evaluate Model Performan
     return out
 
 
-def tune_blr(X_train_sfs, y_train, perf_criteria, cm_perf, blr, fine_tune=1, ease=0):
+def tune_blr(X_train_sfs, y_train, perf_criteria, cm_perf, blr, ease, fine_tune=1):
     # Optimizes BLR model performance to achieve performance criteria (if possible) by adjusting threshold
 
     # X_train_sfs - Variable dataset with only model variables
@@ -214,7 +216,8 @@ def tune_blr(X_train_sfs, y_train, perf_criteria, cm_perf, blr, fine_tune=1, eas
         if B.size == 0:
             tune_st = round(A[2, 0], 4)  # Maximum predicted prob in training set
         else: # select threshold that maxes sensitivity and minimizes FPR in original ROC curve
-            tune_st = round(B[-1, -1], 4)
+            # tune_st = round(B[-1, -1], 4)
+            tune_st = round(B[-1, 0], 4)
         tune_range = np.arange(tune_st, 0, -0.0001)
         sens_spec = np.array([model_eval(y_train, (y_prob_train >= j).astype(int), tune=1) for j in tune_range])
         T = np.column_stack((sens_spec, tune_range))
@@ -240,7 +243,7 @@ def tune_blr(X_train_sfs, y_train, perf_criteria, cm_perf, blr, fine_tune=1, eas
         return np.nan
 
 
-def tune_mlr(X_train_sfs, y_train, perf_criteria, cm_perf, mlr, thresh, ease=0):
+def tune_mlr(X_train_sfs, y_train, perf_criteria, cm_perf, mlr, thresh, ease):
     # Optimizes MLR model performance to achieve performance criteria (if possible) by adjusting threshold
 
     # X_train_sfs - Variable dataset with only model variables
@@ -251,7 +254,7 @@ def tune_mlr(X_train_sfs, y_train, perf_criteria, cm_perf, mlr, thresh, ease=0):
     # ease - use first passing index
 
     y_pred = mlr.predict(X_train_sfs)  # Prediction
-    tune_range = np.arange(0.7, 2, 0.001)
+    tune_range = np.arange(0.7, 2.25, 0.001)
     sens_spec = np.array([model_eval(y_train, (y_pred * j), thresh, tune=1) for j in tune_range])
     T = np.column_stack((sens_spec, tune_range))
 
@@ -275,26 +278,35 @@ def tune_mlr(X_train_sfs, y_train, perf_criteria, cm_perf, mlr, thresh, ease=0):
 # - Alter these inputs at the beginning of each season or if passing models cannot be created
 base_folder = 'S:\SCIENCE & POLICY\\NowCast\Modeling\summer_2019\\'
 beach_base_folder = base_folder + 'Beaches\\'
-
 loc_file = os.path.join(base_folder, 'locations.csv')  # Beach metadata (name, angle, station info)
-spec_beaches = ['Francis']  # Fill if only to model certain beaches
 
+# Inputs
+spec_beaches = ['']  # Fill if only to model certain beaches
 fib = ['FC', 'ENT']  # Change if only trying to model a single FIB type or two
-fib_thresh = {'TC': 10000, 'FC': 400, 'ENT': 104}  # As of 2019, not modeling TC anymore
-
 rs = 0  # random seed for data splitting
+corr_thresh = 0.75  # Variable correlation max before dropping
+VIF_max = 2.5  # maximum allowable VIF
+ease = 0  # Select model tuning that just passes the sensitivity criterion (will have higher specificity) [0 or 1]
+c = .001  # BLR model regularization
+cv = 3  # cross-validation splits
 
+fib_thresh = {'TC': 10000, 'FC': 400, 'ENT': 104}  # As of 2019, not modeling TC anymore
 # Exclude prev. FIB vars, add any other variables to exclude from modeling
 default_no_model = ['sample_time', 'TC', 'FC', 'ENT', 'TC1', 'FC1', 'ENT1', 'TC_exc', 'FC_exc', 'ENT_exc', 'TC1_exc',
                     'FC1_exc', 'ENT1_exc', 'wet']
 # Variables that are automatically excluded [don't make sense to model]
-vars_to_drop = ['logTC1', 'logFC1', 'logENT1'] + ['lograin3', 'lograin4', 'lograin5', 'lograin6', 'lograin7',
-                                                  'wdir_L1_max', 'wdir_L1_min']  # Additional variables to drop
+vars_to_drop = ['logTC1', 'logFC1', 'logENT1'] + ['lograin3', 'lograin4', 'lograin5', 'lograin6', 'lograin7', 'wdir1',
+                                                  'wdir_L1_max', 'wdir_L1_min', 'MWD1_b', 'MWD1_b_max', 'MWD1_b_min',
+                                                  'SIN_MWD1_b_max', 'SIN_MWD1_b_min', 'APD1_max', 'APD1_min',
+                                                  'DPD1_max', 'DPD1_min']
+                                                  # 'WVHT1', 'WVHT1_max', 'WVHT1_min',  'DPD1', 'APD1', 'SIN_MWD1_b', 'q_dir1']
+                                                  # 'wspd1', 'wspd1_min', 'wspd1_max',
+                                                  # 'awind1', 'owind1']  # Additional variables to drop
 no_model = default_no_model + vars_to_drop
 
 split_methods = ['C1', 'C2', 'C3', 'C4', 'JK7525', 'JK7030', 'JK6040']  # C - chronological, JK - jackknife
 s = 'summer'  # Season (for splitting) - 'summer' or 'winter'
-tf = 3  # technical feasibility exceedance limit
+tf = 4  # technical feasibility exceedance limit
 
 model_types = ['blr', 'mlr']  # Binary logistic regression, multiple linear regression
 
@@ -307,15 +319,18 @@ perf_criteria = {  # Model Performance criteria
 # Beaches - FIB where alternative performance criteria is acceptable (spec = CM spec)
 # - List beach as key, and list of FIB as values
 alt_spec_perf = {
-    # 'Santa Monica Pier': 'FC',
-    # 'Cowell': ['FC', 'ENT'],
+    #'Santa Monica Pier': 'FC',
+    'Cowell': ['FC', 'ENT'],
+    'Capitola W Jetty': 'ENT',
     # 'Avalon 50ft W Pier':  ['FC', 'ENT'],
-    # 'Cabrillo Harborside Bathrooms': 'ENT',
+    'Cabrillo Harborside Bathrooms': 'ENT',
     'Clam Beach': 'ENT',
-    # 'Malibu Surfrider Breach': ['TC', 'FC', 'ENT'],
-    # 'Poche Beach': 'ENT',
+    'Pismo Beach Pier South': 'FC',
+    # 'Malibu Surfrider Breach': ['FC', 'ENT'],
+    'Poche Beach': 'ENT',
     # 'Baker Beach Lobos': 'ENT',
     # 'Doheny': 'ENT'
+    'San Clemente Pier Point Zero': ['FC', 'ENT']
 }
 
 old_stdout = sys.stdout  # for logging
@@ -355,7 +370,12 @@ for b in beach_list:  # Create models for each beach
     for f in fib:
         print('  ' + f + ' Exceedances: ' + str(df_vars[f + '_exc'].sum()))
     print('Number of Variables: ' + str(len(to_model)))
-    print('\nParameters:\nRandom Seed: ' + str(rs) + '\nDefault dropped Variables: ' + str(vars_to_drop))
+    print('\nParameters:\nRandom Seed: ' + str(rs) +
+          '\nCorrelation Threshold: ' + str(corr_thresh) +
+          '\nC (regularization): ' + str(c) +
+          '\nCV: ' + str(cv) +
+          '\nVIF: ' + str(VIF_max) +
+          '\nDefault dropped Variables: ' + str(vars_to_drop))
 
     # Create current method df (used to reindex later); Remove non-model vars
     df_cm = df_vars[default_no_model]  # includes FIB_exc and FIB1_exc for CM eval
@@ -384,7 +404,7 @@ for b in beach_list:  # Create models for each beach
         # Initial correlation check - remove highly correlated variables (Check VIF later)
         df_corr = df_fib.corr().loc['log' + f].sort_values(ascending=False)  # correlations
         df_fib.drop(list(df_corr[df_corr.isnull()].index), axis=1, inplace=True)
-        df_fib = check_corr(df_fib, f)
+        df_fib = check_corr(df_fib, f, thresh=corr_thresh)
 
         # Model Iterator (as of Jan 2019)
         # ** Saves all models that pass sens/spec criteria (if none, prints technically infeasible)**
@@ -430,12 +450,12 @@ for b in beach_list:  # Create models for each beach
                 multi = True
                 while multi:
                     try:
-                        features, lm = model_fit(X_train, y_train, r, rs, fib_thresh[f])  # Fit models
+                        features, lm = model_fit(X_train, y_train, r, rs, fib_thresh[f], c=c, cv=cv)  # Fit models
                     except ValueError:
                         print('* Insufficient exceedances to cross-validate models *')
                         break
                     vars = X_train.columns[features]
-                    X_multi = multicollinearity_check(X_train[vars])  # Multicollinearity check for VIFs less than 5
+                    X_multi = multicollinearity_check(X_train[vars], thr=VIF_max)  # Multicollinearity check for VIFs less than 5
                     if len(X_multi.columns) == len(vars):  # If VIF check passes, continue
                         multi = False
                     else:
@@ -481,7 +501,7 @@ for b in beach_list:  # Create models for each beach
                         pc['spec_min'] = df_perf.loc['Current Method', 'Calibration']['Specificity']
 
                 if r == 'blr':
-                    tune_param = tune_blr(X_train_sfs, y_train_blr, pc, cm_perf, lm)
+                    tune_param = tune_blr(X_train_sfs, y_train_blr, pc, cm_perf, lm, ease=ease)
                     if np.isnan(tune_param):
                         continue
                     else:
@@ -490,7 +510,7 @@ for b in beach_list:  # Create models for each beach
                         df_coef.loc['threshold'] = tune_param
                         print('\nProbability threshold after tuning: ' + str(round(tune_param, 4)))
                 elif r == 'mlr':
-                    tune_param = tune_mlr(X_train_sfs, y_train, pc, cm_perf, lm, round(np.log10(fib_thresh[f]), 5))
+                    tune_param = tune_mlr(X_train_sfs, y_train, pc, cm_perf, lm, round(np.log10(fib_thresh[f]), 5), ease=ease)
                     if np.isnan(tune_param):
                         continue
                     else:
